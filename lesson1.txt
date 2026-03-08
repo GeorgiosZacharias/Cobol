@@ -1,0 +1,154 @@
+       IDENTIFICATION DIVISION.
+      *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+       PROGRAM-ID. LESSON1.
+       ENVIRONMENT DIVISION.
+      *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+       CONFIGURATION SECTION.
+      *-----------------------
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT CARD-FILEN ASSIGN TO DISK
+             FILE STATUS IS CARD-FILE-STATUS.
+
+           SELECT PRINT-FILE ASSIGN TO DISK
+             FILE STATUS IS PRINT-FILE-STATUS.
+
+           SELECT NOT-SELECTED-FILE ASSIGN TO DISK
+             FILE STATUS IS NOT-SELECTED-STATUS.
+      *-----------------------
+       DATA DIVISION.
+      *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+       FILE SECTION.
+       FD  CARD-FILEN
+           LABEL RECORD IS OMITTED
+           RECORD CONTAINS 44 CHARACTERS
+           DATA RECORD IS CARD-IN.
+       01  CARD-IN.
+           05  CARD-NAME           PIC A(25).
+           05  FILLER              PIC X(01).
+           05  CARD-CREDITS        PIC 9(03).
+           05  FILLER              PIC X(01).
+           05  CARD-MAJOR          PIC A(12).
+           05  CARD-CRLF           PIC X(02).
+
+       FD  PRINT-FILE
+           LABEL RECORD IS OMITTED
+           RECORD CONTAINS 133 CHARACTERS
+           DATA RECORD IS PRINT-LINE.
+       01  PRINT-LINE.
+           05  COUNTER             PIC ZZ9.
+           05  FILLER              PIC X VALUE '.'.
+           05  FILLER              PIC X(004).
+           05  PRINT-NAME          PIC X(025).
+           05  FILLER              PIC X(001).
+           05  PRINT-CREDITS       PIC 9(003).
+           05  FILLER              PIC X(001).
+           05  PRINT-MAJOR         PIC X(012).
+           05  FILLER              PIC X(81).
+           05  PRINT-CRLF          PIC X(002).
+
+       FD  NOT-SELECTED-FILE
+           LABEL RECORD IS OMITTED
+           RECORD CONTAINS 133 CHARACTERS
+           DATA RECORD IS NOT-SELECTED-REC.
+       01  NOT-SELECTED-REC.
+           05 NOTSELECTED-CNT        PIC ZZ9.
+           05 FILLER                 PIC X VALUE '.'.
+           05 FILLER                 PIC X(004).
+           05 NOTSELECTED-NAME       PIC X(025).
+           05 FILLER                 PIC X(001).
+           05 NOTSELECTED-CREDITS    PIC 9(003).
+           05 FILLER                 PIC X(001).
+           05 NOTSELECTED-MAJOR      PIC X(012).
+           05 FILLER                 PIC X(81).
+           05 NOTSELECTED-CRLF       PIC X(002).
+      *-----------------------
+       WORKING-STORAGE SECTION.
+       01  MY-VARIABLES-ETC.
+           05  CARD-FILE-STATUS        PIC 99.
+           05  PRINT-FILE-STATUS       PIC 99.
+           05  DATA-REMAINS-SWITCH     PIC X(2)    VALUE SPACES.
+           05  READ-CNT                PIC 99      VALUE 0.
+           05  WRITTEN-CNT             PIC 99      VALUE 0.
+
+       01  NOT-SELECTED-CNT            PIC 99      VALUE 0.
+       01  NOT-SELECTED-STATUS         PIC 99.
+
+      *-----------------------
+       PROCEDURE DIVISION.
+                OPEN INPUT CARD-FILEN
+                   OUTPUT PRINT-FILE
+                   OUTPUT NOT-SELECTED-FILE.
+
+           IF CARD-FILE-STATUS NOT = 0
+              DISPLAY 'ERROR OPENING INPUT FILE'
+              GO TO TELOS
+           END-IF
+
+           IF PRINT-FILE-STATUS NOT = 0
+              DISPLAY 'ERROR OPENING PRINT FILE'
+              GO TO TELOS
+           END-IF
+
+           IF NOT-SELECTED-STATUS NOT = 0
+              DISPLAY 'ERROR OPENING NOT SELECTED FILE'
+              GO TO TELOS
+           END-IF
+           READ CARD-FILEN
+                AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH.
+           PERFORM PROCESS-CARDS
+               UNTIL DATA-REMAINS-SWITCH = 'NO'.
+           DISPLAY '***PROGRAM FINISHED SUCCESSFULLY. '
+           DISPLAY 'RECORDS READ       ='  READ-CNT
+           DISPLAY 'RECORDS WRITTEN OUT=' WRITTEN-CNT.
+           DISPLAY 'NOT SELECTED RECORDS WRITTEN OUT=' NOT-SELECTED-CNT.
+
+       TELOS.
+           CLOSE CARD-FILEN, PRINT-FILE, NOT-SELECTED-FILE.
+           STOP RUN.
+       PROCESS-CARDS.
+           ADD 1 TO READ-CNT.
+           IF (CARD-CREDITS > 100 AND CARD-MAJOR = 'ARCHITECT')
+              OR (CARD-MAJOR = 'NUCPHY')
+              OR (CARD-CREDITS>115)
+              OR(CARD-MAJOR = 'DOCTOR' AND CARD-CREDITS > 100)
+              OR (CARD-MAJOR = 'IT' AND CARD-CREDITS >= 109)
+              MOVE SPACES      TO   PRINT-LINE
+              MOVE WRITTEN-CNT TO  COUNTER
+              MOVE '.' TO PRINT-LINE(4:1)
+              MOVE CARD-NAME   TO   PRINT-NAME
+              MOVE CARD-CREDITS TO  PRINT-CREDITS
+              MOVE CARD-MAJOR  TO   PRINT-MAJOR
+              MOVE X'0D0A'     TO   PRINT-CRLF
+              WRITE PRINT-LINE
+               IF PRINT-FILE-STATUS NOT = 0
+                 DISPLAY '***ERROR WRITING PRINT FILE!!!'
+                 DISPLAY 'STATUS-CODE=' PRINT-FILE-STATUS
+                 GO TO TELOS
+               END-IF
+              DISPLAY CARD-NAME SPACE CARD-CREDITS SPACE CARD-MAJOR
+              ADD   1          TO   WRITTEN-CNT
+           ELSE
+              ADD 1 TO NOT-SELECTED-CNT
+
+              MOVE SPACES TO NOT-SELECTED-REC
+
+              MOVE NOT-SELECTED-CNT   TO NOTSELECTED-CNT
+              MOVE '.' TO NOT-SELECTED-REC(4:1)
+              MOVE CARD-NAME          TO NOTSELECTED-NAME
+              MOVE CARD-CREDITS        TO NOTSELECTED-CREDITS
+              MOVE CARD-MAJOR          TO NOTSELECTED-MAJOR
+              MOVE X'0D0A'             TO NOTSELECTED-CRLF
+
+              WRITE NOT-SELECTED-REC
+
+               IF NOT-SELECTED-STATUS NOT = 0
+                 DISPLAY '***ERROR WRITING NOT SELECTED FILE!!!'
+                 DISPLAY 'STATUS=' NOT-SELECTED-STATUS
+                 GO TO TELOS
+               END-IF
+           END-IF
+
+           READ CARD-FILEN
+                AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH.
+       END PROGRAM LESSON1.
