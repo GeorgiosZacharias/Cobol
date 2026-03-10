@@ -67,8 +67,9 @@
        01  RECS-NOT-CHOSEN         PIC 9(002)    VALUE 0.
        01  ONE-DIGIT               PIC 9(001).
        01  OUTPUT-VARIABLE         PIC X(003).
-       01  LINES-PER-PAGE       PIC 9 VALUE 0.
-       01  PAGE-LIMIT           PIC 9 VALUE 5.
+       01  LINES-PER-PAGE          PIC 9 VALUE 1.
+       01  LINES-PER-PAGE-EXC      PIC 9 VALUE 1.
+       01  PAGE-LIMIT              PIC 9 VALUE 5.
 
        01  CURRENT-DATES.
            05 CR-YEAR              PIC 9(4).
@@ -222,6 +223,13 @@
               DISPLAY 'STATUS-CODE=' PRINT-FILE-STATUS
               GO TO FINISH
            END-IF
+           ADD 1 TO LINES-PER-PAGE
+           IF LINES-PER-PAGE > PAGE-LIMIT
+               PERFORM SEPERATOR-EXCP       *> separator line
+               PERFORM HEADER-PRINT         *> header for new page
+               PERFORM SEPERATOR-EXCP       *> separator under header
+               MOVE 1 TO LINES-PER-PAGE     *> reset counter
+           END-IF
            .
        WRITE-NOT-SELECTED-RECORDS.
            ADD 1 TO RECS-NOT-CHOSEN
@@ -253,6 +261,13 @@
               DISPLAY '***ERROR OPENING OUTPUT FILE:EXCP-FILE'
               DISPLAY 'STATUS-CODE=' EXCP-FILE-STATUS
               GO TO FINISH
+           END-IF
+           ADD 1 TO LINES-PER-PAGE-EXC
+           IF LINES-PER-PAGE-EXC > PAGE-LIMIT
+               PERFORM SEPERATOR-PRINT-EXCP   *> separator line
+               PERFORM HEADER-PRINT-EXCP      *> header for new page
+               PERFORM SEPERATOR-PRINT-EXCP   *> separator under header
+               MOVE 1 TO LINES-PER-PAGE-EXC   *> reset counter
            END-IF
            .
        END PROGRAM FIG18.
