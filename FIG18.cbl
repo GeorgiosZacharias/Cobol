@@ -168,11 +168,36 @@
            DISPLAY '***RECORDS READ       = ' RECS-READ.
            DISPLAY '***RECORDS WRITTEN    = ' RECS-WRITTEN.
            DISPLAY '***RECORDS NOT CHOSEN = ' RECS-NOT-CHOSEN.
+           DISPLAY SPACES.
            DISPLAY '***RECORDS TOTAL-CREDITS = ' TOTAL-CREDITS.
            DISPLAY '***RECORDS MAX-CREDITS = ' MAX-CREDITS.
            DISPLAY '***RECORDS MIN-CREDITS = ' MIN-CREDITS.
+           DISPLAY SPACES.
+           DISPLAY '***DOCTOR SELECTED       = ' DOCTOR-SEL.
+           DISPLAY '***DOCTOR NOT SELECTED   = ' DOCTOR-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***ARCHITECT SELECTED    = ' ARCHITECT-SEL.
+           DISPLAY '***ARCHITECT NOT SELECTED= ' ARCHITECT-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***NUCPHY SELECTED       = ' NUCPHY-SEL.
+           DISPLAY '***NUCPHY NOT SELECTED   = ' NUCPHY-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***IT SELECTED           = ' IT-SEL.
+           DISPLAY '***IT NOT SELECTED       = ' IT-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***ENGINEER SELECTED     = ' ENGINEER-SEL.
+           DISPLAY '***ENGINEER NOT SELECTED = ' ENGINEER-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***CHEMIST SELECTED      = ' CHEMIST-SEL.
+           DISPLAY '***CHEMIST NOT SELECTED  = ' CHEMIST-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***SOCIOLOGIST SELECTED  = ' SOCIOLOGIST-SEL.
+           DISPLAY '***SOCIOLOGIST NOT SELECTED= ' SOCIOLOGIST-NOT.
+           DISPLAY SPACES.
+           DISPLAY '***BMW SELECTED           = ' BMW-SEL.
+           DISPLAY '***BMW NOT SELECTED       = ' BMW-NOT.
 
-
+           PERFORM WRITE-STATS-FILE
            STOP RUN.
        DATE-PRINT.
            MOVE SPACES TO PRINT-LINE
@@ -246,6 +271,7 @@
            ELSE
               PERFORM WRITE-NOT-SELECTED-RECORDS
            END-IF.
+           PERFORM UPDATE-MAJOR-COUNTERS.
            READ CARD-FILEN
                 AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH
            .
@@ -277,7 +303,6 @@
            MOVE CARD-CREDITS    TO   PRINT-CREDITS
            MOVE CARD-MAJOR      TO   PRINT-PROFESSION
            MOVE X'0D0A'         TO   PRINT-CRLF
-      *    MOVE X'0D0A'         TO   PRINT-CRLF
            WRITE PRINT-LINE
            IF PRINT-FILE-STATUS NOT = 0
               DISPLAY '***ERROR WRITING OUTPUT FILE: '
@@ -331,4 +356,55 @@
                MOVE 1 TO LINES-PER-PAGE-EXC   *> reset counter
            END-IF
            .
+
+       UPDATE-MAJOR-COUNTERS.
+           IF CARD-MAJOR = 'DOCTOR'
+            IF (CARD-CREDITS >= 100) OR (CARD-CREDITS >= 80 )
+                ADD 1 TO DOCTOR-SEL
+            ELSE
+                ADD 1 TO DOCTOR-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'ARCHITECT'
+            IF (CARD-CREDITS >= 90 )
+                ADD 1 TO ARCHITECT-SEL
+            ELSE
+                ADD 1 TO ARCHITECT-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'NUCPHY'
+            ADD 1 TO NUCPHY-SEL
+           ELSE IF CARD-MAJOR = 'IT'
+            IF (CARD-CREDITS >= 100)
+                ADD 1 TO IT-SEL
+            ELSE
+                ADD 1 TO IT-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'ENGINEER'
+            IF (CARD-CREDITS >= 100)
+                ADD 1 TO ENGINEER-SEL
+            ELSE
+                ADD 1 TO ENGINEER-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'CHEMIST'
+            IF (CARD-CREDITS >= 100)
+                ADD 1 TO CHEMIST-SEL
+            ELSE
+                ADD 1 TO CHEMIST-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'SOCIOLOGIST'
+            IF (CARD-CREDITS >= 100)
+                ADD 1 TO SOCIOLOGIST-SEL
+            ELSE
+                ADD 1 TO SOCIOLOGIST-NOT
+            END-IF
+           ELSE IF CARD-MAJOR = 'BMW'
+            IF (CARD-CREDITS >= 100)
+                ADD 1 TO BMW-SEL
+            ELSE
+                ADD 1 TO BMW-NOT
+            END-IF
+           END-IF.
+
+       WRITE-STATS-FILE.
+
+
        END PROGRAM FIG18.
