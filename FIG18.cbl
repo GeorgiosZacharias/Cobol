@@ -64,8 +64,8 @@
            DATA RECORD IS STATS-LINE.
 
        01  STATS-LINE.
-           05  STATS-TEXT        PIC X(40).
-           05  FILLER            PIC X(5).
+           05  STATS-TEXT        PIC X(38).
+           05  STATS-SPACES      PIC X(11).
            05  STATS-VALUE       PIC X(10).
            05  STATS-CRLF        PIC X(2).
 
@@ -99,7 +99,9 @@
        01  TOTAL-CREDITS        PIC 9(6) VALUE 0.
        01  MAX-CREDITS          PIC 9(3) VALUE 0.
        01  MIN-CREDITS          PIC 9(3) VALUE 999.
+      * Average credits with 2 decimal places (virtual decimal V99)
        01  AVG-CREDITS          PIC 9(4)V99 VALUE 0.
+       01 AVG-CREDITS-DISP     PIC 9(4).99 VALUE 0.
 
        01  DOCTOR-SEL           PIC 9(3) VALUE 0.
        01  DOCTOR-NOT           PIC 9(3) VALUE 0.
@@ -164,6 +166,7 @@
            PERFORM PROCESS-CARDS THRU PROCESS-CARDS-EXIT
                UNTIL NO-MORE-DATA.
        FINISH.
+           PERFORM WRITE-STATS-FILE
            CLOSE CARD-FILEN, PRINT-FILE, EXCP-FILE,STATS-FILE.
            DISPLAY '***RECORDS READ       = ' RECS-READ.
            DISPLAY '***RECORDS WRITTEN    = ' RECS-WRITTEN.
@@ -197,7 +200,7 @@
            DISPLAY '***BMW SELECTED           = ' BMW-SEL.
            DISPLAY '***BMW NOT SELECTED       = ' BMW-NOT.
 
-           PERFORM WRITE-STATS-FILE
+
            STOP RUN.
        DATE-PRINT.
            MOVE SPACES TO PRINT-LINE
@@ -405,6 +408,97 @@
            END-IF.
 
        WRITE-STATS-FILE.
+
+           MOVE 'RECORDS READ'        TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE RECS-READ             TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'RECORDS WRITTEN'     TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE RECS-WRITTEN          TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'RECORDS NOT CHOSEN'  TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE RECS-NOT-CHOSEN       TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+
+           MOVE ALL '-'               TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE SPACES                TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+
+           MOVE 'MAX-CREDITS'         TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE MAX-CREDITS           TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'MIN-CREDITS'         TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE MIN-CREDITS           TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           IF RECS-READ > 0
+              COMPUTE AVG-CREDITS = TOTAL-CREDITS / RECS-READ
+           ELSE
+              MOVE 0 TO AVG-CREDITS
+           END-IF.
+
+           MOVE AVG-CREDITS TO AVG-CREDITS-DISP.
+           MOVE 'AVG-CREDITS' TO STATS-TEXT
+           MOVE SPACES         TO STATS-SPACES
+           MOVE AVG-CREDITS-DISP TO STATS-VALUE
+           MOVE X'0D0A'       TO STATS-CRLF
+           WRITE STATS-LINE.
+
+
+           MOVE ALL '-'               TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE SPACES                TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           *> Display selected majors
+           MOVE 'DOCTOR'              TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE DOCTOR-SEL            TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'CHEMIST'             TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE CHEMIST-SEL           TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'NUCPHY'              TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE NUCPHY-SEL            TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'ARCHITECT'           TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE ARCHITECT-SEL         TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+           MOVE 'IT'                  TO STATS-TEXT
+           MOVE SPACES                TO STATS-SPACES
+           MOVE IT-SEL                TO STATS-VALUE
+           MOVE X'0D0A'               TO STATS-CRLF
+           WRITE STATS-LINE.
+
+
 
 
        END PROGRAM FIG18.
