@@ -13,8 +13,9 @@
 
            SELECT EXCP-FILE ASSIGN TO DISK
              FILE STATUS IS EXCP-FILE-STATUS.
+
            SELECT STATS-FILE ASSIGN TO DISK
-             FILE STATUS IS STATS-FILE.
+             FILE STATUS IS STATS-FILE-STATUS.
        DATA DIVISION.
        FILE SECTION.
        FD  CARD-FILEN
@@ -42,6 +43,7 @@
            05  FILLER-3            PIC X(001).
            05  PRINT-PROFESSION    PIC A(012).
            05  PRINT-CRLF          PIC X(002).
+
        FD  EXCP-FILE                                                    -
            LABEL RECORD IS OMITTED
            RECORD CONTAINS 61 CHARACTERS
@@ -56,10 +58,24 @@
            05  PRINT-PROFESSION-CP    PIC A(012).
            05  PRINT-CRLF-CP          PIC X(002).
 
+       FD  STATS-FILE
+           LABEL RECORD IS OMITTED
+           RECORD CONTAINS 61 CHARACTERS
+           DATA RECORD IS STATS-LINE.
+
+       01  STATS-LINE.
+           05  STATS-TEXT        PIC X(40).
+           05  FILLER            PIC X(5).
+           05  STATS-VALUE       PIC X(10).
+           05  STATS-CRLF        PIC X(2).
+
+
+
        WORKING-STORAGE SECTION.
-       01  CARD-FILEN-STATUS        PIC 99.
+       01  CARD-FILEN-STATUS       PIC 99.
        01  PRINT-FILE-STATUS       PIC 99.
        01  EXCP-FILE-STATUS        PIC 99.
+       01  STATS-FILE-STATUS       PIC 99.
        01  DATA-REMAINS-SWITCH     PIC X(002)    VALUE SPACES.
            88 NO-MORE-DATA         VALUE 'NO'.
        01  RECS-READ               PIC 9(002)    VALUE 0.
@@ -79,6 +95,30 @@
            05 FILLER               PIC X(13).
 
        01  FULL-DATE             PIC X(10).
+
+       01  TOTAL-CREDITS        PIC 9(6) VALUE 0.
+       01  MAX-CREDITS          PIC 9(3) VALUE 0.
+       01  MIN-CREDITS          PIC 9(3) VALUE 999.
+       01  AVG-CREDITS          PIC 9(4)V99 VALUE 0.
+
+       01  DOCTOR-SEL           PIC 9(3) VALUE 0.
+       01  DOCTOR-NOT           PIC 9(3) VALUE 0.
+       01  ARCHITECT-SEL        PIC 9(3) VALUE 0.
+       01  ARCHITECT-NOT        PIC 9(3) VALUE 0.
+       01  NUCPHY-SEL           PIC 9(3) VALUE 0.
+       01  NUCPHY-NOT           PIC 9(3) VALUE 0.
+       01  IT-SEL               PIC 9(3) VALUE 0.
+       01  IT-NOT               PIC 9(3) VALUE 0.
+       01  ENGINEER-SEL         PIC 9(3) VALUE 0.
+       01  ENGINEER-NOT         PIC 9(3) VALUE 0.
+       01  CHEMIST-SEL          PIC 9(3) VALUE 0.
+       01  CHEMIST-NOT          PIC 9(3) VALUE 0.
+       01  SOCIOLOGIST-SEL      PIC 9(3) VALUE 0.
+       01  SOCIOLOGIST-NOT      PIC 9(3) VALUE 0.
+       01  BMW-SEL              PIC 9(3) VALUE 0.
+       01  BMW-NOT              PIC 9(3) VALUE 0.
+
+
        PROCEDURE DIVISION.
        MAIN-PROCEDURE.
            MOVE FUNCTION CURRENT-DATE TO CURRENT-DATES
@@ -87,7 +127,11 @@
               INTO FULL-DATE
            END-STRING.
        MAINLINE.
-           OPEN INPUT CARD-FILEN, OUTPUT PRINT-FILE, EXCP-FILE.
+           OPEN INPUT CARD-FILEN,
+           OUTPUT PRINT-FILE,
+           OUTPUT EXCP-FILE,
+           OUTPUT STATS-FILE.
+
            IF CARD-FILEN-STATUS NOT = 0
               DISPLAY 'ERROR OPENING INPUT FILE:CARD-FILEN!!!'
               DISPLAY 'STATUS-CODE=' CARD-FILEN-STATUS
@@ -99,6 +143,10 @@
            IF EXCP-FILE-STATUS NOT = 0
                 DISPLAY '***ERROR OPENING OUTPUT FILE:EXCP-FILE!!!'
                 DISPLAY 'STATUS-CODE=' EXCP-FILE-STATUS
+                GO TO FINISH.
+           IF STATS-FILE-STATUS NOT = 0
+                DISPLAY '***ERROR OPENING OUTPUT FILE:STATS-FILE!!!'
+                DISPLAY 'STATUS-CODE=' STATS-FILE-STATUS
                 GO TO FINISH.
 
            READ CARD-FILEN
@@ -116,10 +164,14 @@
            PERFORM PROCESS-CARDS THRU PROCESS-CARDS-EXIT
                UNTIL NO-MORE-DATA.
        FINISH.
-           CLOSE CARD-FILEN, PRINT-FILE, EXCP-FILE.
+           CLOSE CARD-FILEN, PRINT-FILE, EXCP-FILE,STATS-FILE.
            DISPLAY '***RECORDS READ       = ' RECS-READ.
            DISPLAY '***RECORDS WRITTEN    = ' RECS-WRITTEN.
            DISPLAY '***RECORDS NOT CHOSEN = ' RECS-NOT-CHOSEN.
+           DISPLAY '***RECORDS TOTAL-CREDITS = ' TOTAL-CREDITS.
+           DISPLAY '***RECORDS MAX-CREDITS = ' MAX-CREDITS.
+           DISPLAY '***RECORDS MIN-CREDITS = ' MIN-CREDITS.
+
 
            STOP RUN.
        DATE-PRINT.
@@ -175,6 +227,15 @@
        PROCESS-NEXT-RECORD.
            ADD 1 TO RECS-READ
            MOVE SPACES TO OUTPUT-VARIABLE
+           ADD CARD-CREDITS TO TOTAL-CREDITS
+
+           IF CARD-CREDITS > MAX-CREDITS
+            MOVE CARD-CREDITS TO MAX-CREDITS
+           END-IF
+
+           IF CARD-CREDITS < MIN-CREDITS
+            MOVE CARD-CREDITS TO MIN-CREDITS
+           END-IF
            IF (CARD-CREDITS  >= 100 )         OR
               (CARD-CREDITS  >= 80            AND
                CARD-MAJOR     = 'DOCTOR')     OR
@@ -186,7 +247,8 @@
               PERFORM WRITE-NOT-SELECTED-RECORDS
            END-IF.
            READ CARD-FILEN
-                AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH.
+                AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH
+           .
 
        PROCESS-CARDS-EXIT.
            EXIT.
@@ -254,7 +316,6 @@
            MOVE CARD-NAME       TO   PRINT-NAME-CP
            MOVE CARD-CREDITS    TO   PRINT-CREDITS-CP
            MOVE CARD-MAJOR      TO   PRINT-PROFESSION-CP
-           MOVE X'0D0A'         TO   PRINT-CRLF-CP
            MOVE X'0D0A'         TO   PRINT-CRLF-CP
            WRITE EXCP-PRINT-LINE
            IF EXCP-FILE-STATUS NOT = 0
