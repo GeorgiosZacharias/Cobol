@@ -13,6 +13,8 @@
 
            SELECT EXCP-FILE ASSIGN TO DISK
              FILE STATUS IS EXCP-FILE-STATUS.
+           SELECT STATS-FILE ASSIGN TO DISK
+             FILE STATUS IS STATS-FILE.
        DATA DIVISION.
        FILE SECTION.
        FD  CARD-FILEN
@@ -36,8 +38,8 @@
            05  FILLER-1            PIC X(004).
            05  PRINT-NAME          PIC X(025).
            05  FILLER-2            PIC X(004).
-           05  PRINT-CREDITS       PIC X(007) VALUE SPACES.
-           05  FILLER-3            PIC X(004).
+           05  PRINT-CREDITS       PIC X(010) VALUE SPACES.
+           05  FILLER-3            PIC X(001).
            05  PRINT-PROFESSION    PIC A(012).
            05  PRINT-CRLF          PIC X(002).
        FD  EXCP-FILE                                                    -
@@ -49,8 +51,8 @@
            05  FILLER-1-CP            PIC X(004).
            05  PRINT-NAME-CP          PIC X(025).
            05  FILLER-2-CP            PIC X(004).
-           05  PRINT-CREDITS-CP       PIC X(007) VALUE SPACES.
-           05  FILLER-3-CP            PIC X(004).
+           05  PRINT-CREDITS-CP       PIC X(010) VALUE SPACES.
+           05  FILLER-3-CP            PIC X(001).
            05  PRINT-PROFESSION-CP    PIC A(012).
            05  PRINT-CRLF-CP          PIC X(002).
 
@@ -65,8 +67,24 @@
        01  RECS-NOT-CHOSEN         PIC 9(002)    VALUE 0.
        01  ONE-DIGIT               PIC 9(001).
        01  OUTPUT-VARIABLE         PIC X(003).
+       01  LINES-PER-PAGE       PIC 9 VALUE 0.
+       01  PAGE-LIMIT           PIC 9 VALUE 5.
+
+       01  CURRENT-DATES.
+           05 CR-YEAR              PIC 9(4).
+           05 CR-MONTH             PIC 9(2).
+           05 CR-DAY               PIC 9(2).
+      *returns 21 characters
+           05 FILLER               PIC X(13).
+
+       01  FULL-DATE             PIC X(10).
        PROCEDURE DIVISION.
        MAIN-PROCEDURE.
+           MOVE FUNCTION CURRENT-DATE TO CURRENT-DATES
+           STRING CR-DAY "/" CR-MONTH "/" CR-YEAR
+              DELIMITED BY SIZE
+              INTO FULL-DATE
+           END-STRING.
        MAINLINE.
            OPEN INPUT CARD-FILEN, OUTPUT PRINT-FILE, EXCP-FILE.
            IF CARD-FILEN-STATUS NOT = 0
@@ -84,10 +102,14 @@
 
            READ CARD-FILEN
                 AT END MOVE 'NO'   TO DATA-REMAINS-SWITCH.
-           PERFORM HEADER-PRINT   THRU HEADER-PRINT-EXIT.
-           PERFORM SEPERATOR-EXCP.
+           PERFORM DATE-PRINT
+           PERFORM SEPERATOR-EXCP
+           PERFORM HEADER-PRINT
+           PERFORM SEPERATOR-EXCP
 
-           PERFORM HEADER-PRINT-EXCP.
+           PERFORM DATE-PRINT-EXCP
+           PERFORM SEPERATOR-PRINT-EXCP
+           PERFORM HEADER-PRINT-EXCP
            PERFORM SEPERATOR-PRINT-EXCP
 
            PERFORM PROCESS-CARDS THRU PROCESS-CARDS-EXIT
@@ -99,6 +121,18 @@
            DISPLAY '***RECORDS NOT CHOSEN = ' RECS-NOT-CHOSEN.
 
            STOP RUN.
+       DATE-PRINT.
+           MOVE SPACES TO PRINT-LINE
+           MOVE 'DATE:' TO PRINT-NAME
+           MOVE FULL-DATE TO PRINT-CREDITS
+           MOVE X'0D0A' TO PRINT-CRLF
+           WRITE PRINT-LINE.
+       DATE-PRINT-EXCP.
+           MOVE SPACES      TO EXCP-PRINT-LINE
+           MOVE 'DATE:'     TO PRINT-NAME-CP
+           MOVE FULL-DATE   TO PRINT-CREDITS-CP
+           MOVE X'0D0A'     TO PRINT-CRLF-CP
+           WRITE EXCP-PRINT-LINE.
 
        HEADER-PRINT.                                                          -
            MOVE 'A/A'        TO   QUEUE-NUMBER
@@ -119,6 +153,8 @@
            WRITE PRINT-LINE.
 
        HEADER-PRINT-EXCP.
+
+
            MOVE 'A/A'        TO   QUEUE-NUMBER-CP
            MOVE SPACES       TO   FILLER-1-CP
            MOVE SPACES       TO   FILLER-2-CP
@@ -135,7 +171,7 @@
            WRITE EXCP-PRINT-LINE.
 
        PROCESS-CARDS.
-       PROCESS-NEXT-RECORD..
+       PROCESS-NEXT-RECORD.
            ADD 1 TO RECS-READ
            MOVE SPACES TO OUTPUT-VARIABLE
            IF (CARD-CREDITS  >= 100 )         OR
@@ -156,7 +192,7 @@
 
        WRITE-SELECTED-RECORDS.
            ADD 1 TO RECS-WRITTEN
-           IF (RECS-WRITTEN<10) THEN
+           IF (RECS-WRITTEN<5) THEN
                 MOVE RECS-WRITTEN TO ONE-DIGIT
                 STRING ONE-DIGIT DELIMITED BY SIZE
                        ' ' DELIMITED BY SPACE
@@ -189,7 +225,7 @@
            .
        WRITE-NOT-SELECTED-RECORDS.
            ADD 1 TO RECS-NOT-CHOSEN
-           IF (RECS-NOT-CHOSEN<10) THEN
+           IF (RECS-NOT-CHOSEN<5) THEN
                MOVE RECS-NOT-CHOSEN TO ONE-DIGIT
                STRING ONE-DIGIT DELIMITED BY SIZE
                       ' ' DELIMITED BY SPACE
