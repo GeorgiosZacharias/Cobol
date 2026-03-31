@@ -109,6 +109,8 @@
        01  INVALID-PAGE.
            05 INVALID-PAGE-STR             PIC X(06) VALUE 'PAGE: '.
            05 INVALID-PAGE-CNT             PIC 9(02) VALUE 0.
+       01  AFM-STATUS                   PIC X(010) VALUE SPACES.
+       01  AFM-CAUSE                    PIC X(042) VALUE SPACES.
 
        PROCEDURE DIVISION.
        MAIN-PROCEDURE.
@@ -256,10 +258,15 @@
            IF (PAYROLL-HOURS-WORKED IS NUMERIC      AND
                    PAYROLL-HOURS-WORKED NOT = ZERO) AND
               (PAYROLL-HOUR-RATE    IS NUMERIC      AND
-                   PAYROLL-HOUR-RATE NOT = ZERO)    AND
-              (PAYROLL-AFM          IS NUMERIC      AND
-                   PAYROLL-AFM NOT = ZERO)
-                PERFORM VALID-PAYROLLS
+                   PAYROLL-HOUR-RATE NOT = ZERO)
+               MOVE SPACES TO AFM-STATUS
+               MOVE SPACES TO AFM-CAUSE
+               CALL 'AFMSUBRTX' USING PAYROLL-AFM AFM-STATUS AFM-CAUSE
+                   IF AFM-STATUS = 'VALID'
+                       PERFORM VALID-PAYROLLS
+                   ELSE
+                       PERFORM INVALID-PAYROLLS
+                   END-IF
            ELSE
                 PERFORM INVALID-PAYROLLS
            END-IF.
@@ -330,14 +337,12 @@
                    MOVE 'HOURS ARE NOT NUMERIC!!!'    TO INVALID-REASON
                WHEN PAYROLL-HOUR-RATE    IS NOT NUMERIC
                    MOVE 'HOUR-RATE IS NOT NUMERIC!!!' TO INVALID-REASON
-               WHEN PAYROLL-AFM          IS NOT NUMERIC
-                   MOVE 'AFM IS NOT NUMERIC!!!'       TO INVALID-REASON
+               WHEN AFM-STATUS           = 'INVALID'
+                   MOVE AFM-CAUSE       TO INVALID-REASON
                WHEN PAYROLL-HOURS-WORKED IS ZERO
                    MOVE 'HOURS ARE 0!!!'              TO INVALID-REASON
                WHEN PAYROLL-HOUR-RATE    IS ZERO
                    MOVE 'HOUR-RATE IS 0!!!'           TO INVALID-REASON
-               WHEN PAYROLL-AFM          IS ZERO
-                   MOVE 'AFM IS 0!!!'                 TO INVALID-REASON
                WHEN OTHER
                    MOVE 'AFM IS NOT VALID!!!'         TO INVALID-REASON
            END-EVALUATE
