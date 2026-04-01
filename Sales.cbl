@@ -6,9 +6,6 @@
        FILE-CONTROL.
            SELECT SALES-FILE ASSIGN TO DISK
                FILE STATUS IS SALES-FILE-STATUS.
-
-           SELECT RESULTS-FILE ASSIGN TO DISK
-               FILE STATUS IS RESULTS-FILE-STATUS.
        DATA DIVISION.
        FILE SECTION.
        FD  SALES-FILE
@@ -16,48 +13,40 @@
            RECORD CONTAINS 12 CHARACTERS
            DATA RECORD IS SALES-REC.
        01  SALES-REC.
-           05 SALES-AMOUNT        PIC 9(10).
-           05 SALES-CRLF          PIC X(02).
-
-
-
+           05 SALES-AMOUNT               PIC 9(10).
+           05 SALES-CRLF                 PIC X(02).
        WORKING-STORAGE SECTION.
        01  SALES-FILE-STATUS             PIC 9(02) VALUE ZERO.
-       01  RESULTS-FILE-STATUS           PIC 9(02) VALUE ZERO.
-       01  DATA-REMAINS-SWITCH             PIC X(02) VALUE SPACES.
-           88 NO-MORE-DATA                 VALUE 'NO'.
+       01  DATA-REMAINS-SWITCH           PIC X(02) VALUE SPACES.
+           88 NO-MORE-DATA               VALUE 'NO'.
        01  REGION-NAMES.
-           05  REGION-NAME OCCURS 9 TIMES PIC X(10) VALUE SPACES.
+           05  REGION-NAME OCCURS 9      TIMES PIC X(10) VALUE SPACES.
        01  TWOTABS-TABLE.
            05 REGIONS  OCCURS 9 TIMES.
               10 MONTHLY-SALES OCCURS 12 TIMES PIC 9(05).
-       01  ROW-TOTAL      PIC 9(8).
-       01  COL-TOTAL      PIC 9(8).
-       01  DISPLAY-SALE   PIC ZZZZ9.
-       01  DISPLAY-TOTAL  PIC ZZZZZZ9.
 
-
-       01  IDI                  PIC 9(3).
-       01  IDJ                  PIC 9(03).
-       01  IDX                  PIC 9(03) VALUE 0.
+       01  DISPLAY-SALE                  PIC ZZZZ9.
+       01  DISPLAY-TOTAL                 PIC ZZZZZZ9.
+       01  ROW-TOTAL                     PIC 9(8)  VALUE 0.
+       01  COL-TOTAL                     PIC 9(8)  VALUE 0.
+       01  GRAND-TOTAL                   PIC 9(8) VALUE 0.
+       01  PRINT-GRAND-TOTAL             PIC ZZZZZZ9 .
+       01  IDI                           PIC 9(3).
+       01  IDJ                           PIC 9(03).
+       01  IDX                           PIC 9(03) VALUE 0.
 
        PROCEDURE DIVISION.
            PERFORM OPEN-FILES
+           INITIALIZE TWOTABS-TABLE
            PERFORM PROCESS-SALES
            PERFORM DISPLAY-SALES-TABLE
-           PERFORM WRITE-SALES-TABLE
            PERFORM FINISH.
 
        OPEN-FILES.
            OPEN INPUT SALES-FILE
-               OUTPUT RESULTS-FILE
            IF SALES-FILE-STATUS NOT = 0 THEN
                DISPLAY '***ERROR OPENING INPUT FILE: PAYROLL-FILE'
                DISPLAY 'STATUS-CODE=' SALES-FILE-STATUS
-               PERFORM FINISH.
-           IF RESULTS-FILE-STATUS NOT = 0 THEN
-               DISPLAY '***ERROR OPENING INPUT FILE: VALID-PAYROLL-FILE'
-               DISPLAY 'STATUS-CODE=' RESULTS-FILE-STATUS
                PERFORM FINISH.
 
        PROCESS-SALES.
@@ -97,6 +86,7 @@
                DISPLAY '|'  NO ADVANCING
                MOVE ROW-TOTAL TO DISPLAY-TOTAL
                DISPLAY DISPLAY-TOTAL
+               ADD ROW-TOTAL TO GRAND-TOTAL
            END-PERFORM
            DISPLAY '--------------------------------------------------'
       -     '-------------------------------------------'
@@ -111,12 +101,12 @@
                MOVE COL-TOTAL TO DISPLAY-SALE
                DISPLAY DISPLAY-SALE SPACE NO ADVANCING
            END-PERFORM
-           DISPLAY SPACE.
+           DISPLAY '|' NO ADVANCING
+           MOVE GRAND-TOTAL TO PRINT-GRAND-TOTAL
+           DISPLAY PRINT-GRAND-TOTAL.
 
-       WRITE-SALES-TABLE.
 
        FINISH.
            CLOSE SALES-FILE
-                 RESULTS-FILE
            STOP RUN.
        END PROGRAM SALES.
