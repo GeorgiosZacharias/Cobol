@@ -20,7 +20,7 @@
        01  DATA-REMAINS-SWITCH           PIC X(02) VALUE SPACES.
            88 NO-MORE-DATA               VALUE 'NO'.
        01  REGION-NAMES.
-           05  REGION-NAME OCCURS 9      TIMES PIC X(10) VALUE SPACES.
+           05  REGION-NAME OCCURS 9      TIMES PIC X(11) VALUE SPACES.
        01  TWOTABS-TABLE.
            05 REGIONS  OCCURS 9 TIMES.
               10 MONTHLY-SALES OCCURS 12 TIMES PIC 9(05).
@@ -45,7 +45,7 @@
        OPEN-FILES.
            OPEN INPUT SALES-FILE
            IF SALES-FILE-STATUS NOT = 0 THEN
-               DISPLAY '***ERROR OPENING INPUT FILE: PAYROLL-FILE'
+               DISPLAY '***ERROR OPENING INPUT FILE: SALES-FILE'
                DISPLAY 'STATUS-CODE=' SALES-FILE-STATUS
                PERFORM FINISH.
 
@@ -68,20 +68,17 @@
            MOVE 'IONIO'     TO REGION-NAME(7)
            MOVE 'PELOPONISOS'    TO REGION-NAME(8)
            MOVE 'STEREA'     TO REGION-NAME(9)
-           DISPLAY 'REGION        JAN   FEB   MAR   APR   MAY   JUN   '
-      -            'JUL   AUG   SEP   OCT   NOV   DEC    TOTAL'
+           DISPLAY 'REGION         JAN   FEB   MAR   APR   MAY   JUN'
+      -            '   JUL   AUG   SEP   OCT   NOV   DEC    TOTAL'
            DISPLAY '--------------------------------------------------'
       -     '-------------------------------------------'
            PERFORM VARYING IDI FROM 1 BY 1 UNTIL IDI > 9
-
                MOVE 0 TO ROW-TOTAL
-
                DISPLAY REGION-NAME(IDI) '  ' NO ADVANCING
-
                PERFORM VARYING IDJ FROM 1 BY 1 UNTIL IDJ > 12
-                MOVE MONTHLY-SALES(IDI,IDJ) TO DISPLAY-SALE
-                DISPLAY DISPLAY-SALE SPACE NO ADVANCING
-                ADD MONTHLY-SALES(IDI,IDJ) TO ROW-TOTAL
+                   MOVE MONTHLY-SALES(IDI,IDJ) TO DISPLAY-SALE
+                   DISPLAY DISPLAY-SALE ' ' NO ADVANCING
+                   ADD MONTHLY-SALES(IDI,IDJ) TO ROW-TOTAL
                END-PERFORM
                DISPLAY '|'  NO ADVANCING
                MOVE ROW-TOTAL TO DISPLAY-TOTAL
@@ -99,7 +96,7 @@
                END-PERFORM
 
                MOVE COL-TOTAL TO DISPLAY-SALE
-               DISPLAY DISPLAY-SALE SPACE NO ADVANCING
+               DISPLAY DISPLAY-SALE ' ' NO ADVANCING
            END-PERFORM
            DISPLAY '|' NO ADVANCING
            MOVE GRAND-TOTAL TO PRINT-GRAND-TOTAL
